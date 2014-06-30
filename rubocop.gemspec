@@ -9,13 +9,13 @@ Gem::Specification.new do |s|
   s.version = RuboCop::Version::STRING
   s.platform = Gem::Platform::RUBY
   s.required_ruby_version = '>= 1.9.2'
-  s.authors = ['Bozhidar Batsov']
+  s.authors = ['Bozhidar Batsov', 'Jonas Arvidsson', 'Yuji Nakayama']
   s.description = <<-EOF
     Automatic Ruby code style checking tool.
     Aims to enforce the community-driven Ruby Style Guide.
   EOF
 
-  s.email = 'bozhidar@batsov.com'
+  s.email = 'rubocop@googlegroups.com'
   s.files = `git ls-files`.split($RS)
   s.test_files = s.files.grep(/^spec\//)
   s.executables = s.files.grep(/^bin\//) { |f| File.basename(f) }
@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.summary = 'Automatic Ruby code style checking tool.'
 
   s.add_runtime_dependency('rainbow', '>= 1.99.1', '< 3.0')
-  s.add_runtime_dependency('parser', '~> 2.1.9')
+  s.add_runtime_dependency('parser', '>= 2.2.0.pre.2', '< 3.0')
   s.add_runtime_dependency('powerpack', '~> 0.0.6')
   s.add_runtime_dependency('json', '>= 1.7.7', '< 2')
   s.add_runtime_dependency('ruby-progressbar', '~> 1.4')

@@ -12,15 +12,33 @@ module RuboCop
       #   puts 'hello'
       #  end
       # end
-      class IndentationWidth < Cop
+      class IndentationWidth < Cop # rubocop:disable Style/ClassLength
         include AutocorrectAlignment
         include CheckMethods
         include CheckAssignment
         include IfNode
+        include AccessModifierNode
 
         CORRECT_INDENTATION = 2
 
+        def on_rescue(node)
+          _begin_node, *rescue_nodes, else_node = *node
+          rescue_nodes.each do |rescue_node|
+            _, _, body = *rescue_node
+            check_indentation(rescue_node.loc.keyword, body)
+          end
+          check_indentation(node.loc.else, else_node)
+        end
+
+        def on_ensure(node)
+          _body, ensure_body = *node
+          check_indentation(node.loc.keyword, ensure_body)
+        end
+
         def on_kwbegin(node)
+          # Check indentation against end keyword but only if it's first on its
+          # line.
+          return unless begins_its_line?(node.loc.end)
           check_indentation(node.loc.end, node.children.first)
         end
 
@@ -78,7 +96,23 @@ module RuboCop
           latest_when = nil
           branches.compact.each do |b|
             if b.type == :when
-              _condition, body = *b
+              # TODO: Revert to the original expresson once the fix in Rubinius
+              #   is released.
+              #
+              # Originally this expression was:
+              #
+              #   *_conditions, body = *b
+              #
+              # However it fails on Rubinius 2.2.9 due to its bug:
+              #
+              #   RuntimeError:
+              #     can't modify frozen instance of Array
+              #   # kernel/common/array.rb:988:in `pop'
+              #   # ./lib/rubocop/cop/style/indentation_width.rb:99:in `on_case'
+              #
+              # It seems to be fixed on the current master (0a92c3c).
+              body = b.children.last
+
               # Check "when" body against "when" keyword indentation.
               check_indentation(b.loc.keyword, body)
               latest_when = b
@@ -164,7 +198,10 @@ module RuboCop
 
           # This cop only auto-corrects the first statement in a def body, for
           # example.
-          body_node = body_node.children.first if body_node.type == :begin
+          if body_node.type == :begin && !(body_node.loc.begin &&
+                                           body_node.loc.begin.is?('('))
+            body_node = body_node.children.first
+          end
 
           expr = body_node.loc.expression
           begin_pos, ind = expr.begin_pos, expr.begin_pos - indentation
@@ -177,8 +214,7 @@ module RuboCop
         end
 
         def starts_with_access_modifier?(body_node)
-          body_node.type == :begin &&
-            AccessModifierIndentation.modifier_node?(body_node.children.first)
+          body_node.type == :begin && modifier_node?(body_node.children.first)
         end
       end
     end

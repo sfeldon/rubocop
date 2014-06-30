@@ -245,6 +245,23 @@ describe RuboCop::Cop::Style::AlignParameters, :config do
       new_source = autocorrect_source(cop, original_source)
       expect(new_source).to eq(original_source.join("\n"))
     end
+
+    it 'does not crash in autocorrect on dynamic string in parameter value' do
+      src = ['class MyModel < ActiveRecord::Base',
+             '  has_many :other_models,',
+             '    class_name: "legacy_name",',
+             '    order: "#{leagacy_name.table_name}.published DESC"',
+             '',
+             'end']
+      new_source = autocorrect_source(cop, src)
+      expect(new_source)
+        .to eq ['class MyModel < ActiveRecord::Base',
+                '  has_many :other_models,',
+                '           class_name: "legacy_name",',
+                '           order: "#{leagacy_name.table_name}.published DESC"',
+                '',
+                'end'].join("\n")
+    end
   end
 
   context 'aligned with fixed indentation' do
@@ -322,7 +339,7 @@ describe RuboCop::Cop::Style::AlignParameters, :config do
         expect(cop.offenses).to be_empty
       end
 
-      it 'registers offences for double indentation from relevant method' do
+      it 'registers offenses for double indentation from relevant method' do
         inspect_source(cop, [' something',
                              '   .method_name(',
                              '       a,',

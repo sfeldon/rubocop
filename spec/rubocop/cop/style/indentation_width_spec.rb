@@ -132,7 +132,7 @@ describe RuboCop::Cop::Style::IndentationWidth do
                                         'foo',
                                         'GOO',
                                         '  def baz',
-                                        '    do_something',
+                                        '    do_something("#{x}")',
                                         '  end',
                                         'end',
                                         'end'])
@@ -144,10 +144,51 @@ describe RuboCop::Cop::Style::IndentationWidth do
                                  'foo',
                                  'GOO',
                                  '    def baz',
-                                 '      do_something',
+                                 '      do_something("#{x}")',
                                  '    end',
                                  '  end',
                                  'end'].join("\n")
+      end
+
+      it 'indents parenthesized expressions' do
+        src = ['var1 = nil',
+               'array_list = []',
+               'if var1.attr1 != 0 || array_list.select{ |w|',
+               '                        (w.attr2 == var1.attr2)',
+               '                 }.blank?',
+               '  array_list << var1',
+               'end']
+        corrected = autocorrect_source(cop, src)
+        expect(corrected)
+          .to eq ['var1 = nil',
+                  'array_list = []',
+                  'if var1.attr1 != 0 || array_list.select{ |w|',
+                  '                   (w.attr2 == var1.attr2)',
+                  '                 }.blank?',
+                  '  array_list << var1',
+                  'end'].join("\n")
+      end
+
+      it 'leaves rescue ; end unchanged' do
+        src = ['if variable',
+               '  begin',
+               '    do_something',
+               '  rescue ; end # consume any exception',
+               'end']
+        corrected = autocorrect_source(cop, src)
+        expect(corrected).to eq src.join("\n")
+      end
+
+      it 'leaves block unchanged if block end is not on its own line' do
+        src = ['a_function {',
+               '  # a comment',
+               '  result = AObject.find_by_attr(attr) if attr',
+               '  result || AObject.make(',
+               '      :attr => attr,',
+               '      :attr2 => Other.get_value(),',
+               '      :attr3 => Another.get_value()) }']
+        corrected = autocorrect_source(cop, src)
+        expect(corrected).to eq src.join("\n")
       end
     end
 
@@ -505,6 +546,20 @@ describe RuboCop::Cop::Style::IndentationWidth do
       expect(cop.offenses).to be_empty
     end
 
+    it 'accepts aligned values in when clause' do
+      inspect_source(cop,
+                     ['case superclass',
+                      'when /\A(#{NAMESPACEMATCH})(?:\s|\Z)/,',
+                      '     /\A(Struct|OStruct)\.new/,',
+                      '     /\ADelegateClass\((.+?)\)\s*\Z/,',
+                      '     /\A(#{NAMESPACEMATCH})\(/',
+                      '  $1',
+                      'when "self"',
+                      '  namespace.path',
+                      'end'])
+      expect(cop.offenses).to be_empty
+    end
+
     it 'accepts case/when/else laid out as a table' do
       inspect_source(cop,
                      ['case sexp.loc.keyword.source',
@@ -700,6 +755,46 @@ describe RuboCop::Cop::Style::IndentationWidth do
                      ['module Test',
                       'end'])
       expect(cop.offenses).to be_empty
+    end
+  end
+
+  context 'with begin/rescue/else/ensure/end' do
+    it 'registers an offense for bad indentation of bodies' do
+      inspect_source(cop,
+                     ['def my_func',
+                      "  puts 'do something outside block'",
+                      '  begin',
+                      "  puts 'do something error prone'",
+                      '  rescue SomeException, SomeOther => e',
+                      "   puts 'wrongly intended error handling'",
+                      '  rescue',
+                      "   puts 'wrongly intended error handling'",
+                      '  else',
+                      "     puts 'wrongly intended normal case handling'",
+                      '  ensure',
+                      "      puts 'wrongly intended common handling'",
+                      '  end',
+                      'end'])
+      expect(cop.messages).to eq(['Use 2 (not 0) spaces for indentation.',
+                                  'Use 2 (not 1) spaces for indentation.',
+                                  'Use 2 (not 1) spaces for indentation.',
+                                  'Use 2 (not 3) spaces for indentation.',
+                                  'Use 2 (not 4) spaces for indentation.'])
+    end
+  end
+
+  context 'with def/rescue/end' do
+    it 'registers an offense for bad indentation of bodies' do
+      inspect_source(cop,
+                     ['def my_func',
+                      "  puts 'do something error prone'",
+                      'rescue SomeException',
+                      " puts 'wrongly intended error handling'",
+                      'rescue',
+                      " puts 'wrongly intended error handling'",
+                      'end'])
+      expect(cop.messages).to eq(['Use 2 (not 1) spaces for indentation.',
+                                  'Use 2 (not 1) spaces for indentation.'])
     end
   end
 

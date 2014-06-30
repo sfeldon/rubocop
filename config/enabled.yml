@@ -93,6 +93,10 @@ Style/ClassAndModuleChildren:
   Description: 'Checks style of children classes and modules.'
   Enabled: true
 
+Style/ClassCheck:
+  Description: 'Enforces consistent use of `Object#is_a?` or `Object#kind_of?`.'
+  Enabled: true
+
 Style/ClassLength:
   Description: 'Avoid classes longer than 100 lines of code.'
   Enabled: true
@@ -469,10 +473,18 @@ Style/SpaceBeforeBlockBraces:
                  before it.
   Enabled: true
 
+Style/SpaceBeforeComma:
+  Description: 'No spaces before commas.'
+  Enabled: true
+
 Style/SpaceBeforeComment:
   Description: >-
                  Checks for missing space between code and a comment on the
                  same line.
+  Enabled: true
+
+Style/SpaceBeforeSemicolon:
+  Description: 'No spaces before semicolons.'
   Enabled: true
 
 Style/SpaceInsideBlockBraces:
@@ -547,6 +559,10 @@ Style/UnneededCapitalW:
   Description: 'Checks for %W when interpolation is not needed.'
   Enabled: true
 
+Style/UnneededPercentQ:
+  Description: 'Checks for %q/%Q when single quotes or double quotes would do.'
+  Enabled: true
+
 Style/UnneededPercentX:
   Description: 'Checks for %x when `` would do.'
   Enabled: true
@@ -608,6 +624,10 @@ Lint/ConditionPosition:
 
 Lint/Debugger:
   Description: 'Check for debugger calls.'
+  Enabled: true
+
+Lint/DefEndAlignment:
+  Description: 'Align ends corresponding to defs correctly.'
   Enabled: true
 
 Lint/DeprecatedClassMethods:
